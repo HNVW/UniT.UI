@@ -2,9 +2,8 @@
   "name": "UniT.UI.DI",
   "rootNamespace": "UniT.UI.DI",
   "references": [
-    "UniT.Extensions",
     "UniT.Logging.DI",
-    "UniT.ResourceManagement.DI",
+    "UniT.Pooling.DI",
     "UniT.UI",
     "UniT.DI",
     "Zenject",

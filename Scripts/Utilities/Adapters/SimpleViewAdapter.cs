@@ -1,6 +1,7 @@
 #nullable enable
 namespace UniT.UI.Utilities
 {
+    using System;
     using System.Collections.Generic;
     using UniT.Extensions;
     using UnityEngine;
@@ -10,35 +11,35 @@ namespace UniT.UI.Utilities
         [SerializeField] private RectTransform content = null!;
         [SerializeField] private TView         prefab  = default!;
 
-        private readonly Dictionary<IView, IReadOnlyList<IView>> views        = new Dictionary<IView, IReadOnlyList<IView>>();
-        private readonly Queue<TView>                            pooledViews  = new Queue<TView>();
-        private readonly HashSet<TView>                          spawnedViews = new HashSet<TView>();
+        private readonly Dictionary<IView, IView[]> views        = new();
+        private readonly Queue<TView>               pooledViews  = new();
+        private readonly HashSet<TView>             spawnedViews = new();
 
         public void Set(IEnumerable<TParams> allParams)
         {
             this.OnHide();
-            allParams.ForEach(@params =>
+            foreach (var @params in allParams)
             {
-                var view = this.pooledViews.DequeueOrDefault(() =>
+                var view = this.pooledViews.DequeueOrDefault(static @this =>
                 {
-                    var view       = Instantiate(this.prefab.gameObject, this.content).GetComponent<TView>();
+                    var view       = Instantiate(@this.prefab.gameObject, @this.content).GetComponentOrThrow<TView>();
                     var childViews = view.gameObject.GetComponentsInChildren<IView>();
-                    this.views.Add(view, childViews);
-                    childViews.ForEach(childView =>
+                    @this.views.Add(view, childViews);
+                    foreach (var childView in childViews.AsSpan())
                     {
-                        childView.Container = this.Container;
-                        childView.Manager   = this.Manager;
-                        childView.Activity  = this.Activity;
-                    });
-                    childViews.ForEach(childView => childView.OnInitialize());
+                        childView.Container = @this.Container;
+                        childView.Manager   = @this.Manager;
+                        childView.Activity  = @this.Activity;
+                    }
+                    foreach (var childView in @this.views[view].AsSpan()) childView.OnInitialize();
                     return view;
-                });
+                }, this);
                 view.transform.SetAsLastSibling();
                 view.gameObject.SetActive(true);
                 view.Params = @params!;
-                this.views[view].ForEach(childView => childView.OnShow());
+                foreach (var childView in this.views[view].AsSpan()) childView.OnShow();
                 this.spawnedViews.Add(view);
-            });
+            }
         }
 
         protected override void OnHide()
@@ -46,7 +47,7 @@ namespace UniT.UI.Utilities
             this.spawnedViews.Clear(view =>
             {
                 view.gameObject.SetActive(false);
-                this.views[view].ForEach(childView => childView.OnHide());
+                foreach (var childView in this.views[view].AsSpan()) childView.OnHide();
                 this.pooledViews.Enqueue(view);
             });
         }
@@ -56,7 +57,7 @@ namespace UniT.UI.Utilities
             this.pooledViews.Clear(view =>
             {
                 Destroy(view.gameObject);
-                this.views[view].ForEach(childView => childView.OnDispose());
+                foreach (var childView in this.views[view].AsSpan()) childView.OnDispose();
             });
         }
     }

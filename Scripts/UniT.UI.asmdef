@@ -4,7 +4,7 @@
   "references": [
     "UniT.Extensions",
     "UniT.Logging",
-    "UniT.ResourceManagement",
+    "UniT.Pooling",
     "UniT.DI",
     "UniTask"
   ],

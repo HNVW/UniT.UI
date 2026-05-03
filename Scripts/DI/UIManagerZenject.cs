@@ -3,7 +3,7 @@
 namespace UniT.UI.DI
 {
     using UniT.Logging.DI;
-    using UniT.ResourceManagement.DI;
+    using UniT.Pooling.DI;
     using UnityEngine.EventSystems;
     using Zenject;
 
@@ -14,7 +14,7 @@ namespace UniT.UI.DI
             if (container.HasBinding<IUIManager>()) return;
             container.BindDependencyContainer();
             container.BindLoggerManager();
-            container.BindAssetsManager();
+            container.BindObjectPoolManager();
             container.Bind<RootUICanvas>().FromComponentInNewPrefabResource(nameof(RootUICanvas)).AsSingle();
             container.Bind<EventSystem>().FromComponentInNewPrefabResource(nameof(EventSystem)).AsSingle();
             container.BindInterfacesTo<UIManager>().AsSingle();

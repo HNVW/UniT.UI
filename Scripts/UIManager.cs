@@ -7,12 +7,11 @@ namespace UniT.UI
     using UniT.DI;
     using UniT.Extensions;
     using UniT.Logging;
-    using UniT.ResourceManagement;
+    using UniT.Pooling;
     using UnityEngine;
     using UnityEngine.EventSystems;
     using UnityEngine.Scripting;
     using ILogger = UniT.Logging.ILogger;
-    using Object = UnityEngine.Object;
     #if UNIT_UNITASK
     using System.Threading;
     using Cysharp.Threading.Tasks;
@@ -27,27 +26,31 @@ namespace UniT.UI
         private readonly RootUICanvas         canvas;
         private readonly EventSystem          eventSystem;
         private readonly IDependencyContainer container;
-        private readonly IAssetsManager       assetsManager;
+        private readonly IObjectPoolManager   objectPoolManager;
         private readonly ILogger              logger;
 
-        private readonly Transform                        root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
-        private readonly HashSet<IActivity>               showingActivities = new HashSet<IActivity>();
-        private readonly Dictionary<object, IActivity>    keyToPrefab       = new Dictionary<object, IActivity>();
-        private readonly Dictionary<IActivity, IActivity> prefabToActivity  = new Dictionary<IActivity, IActivity>();
-        private readonly Dictionary<IActivity, object>    activityToKey     = new Dictionary<IActivity, object>();
-        private readonly Dictionary<IActivity, IActivity> activityToPrefab  = new Dictionary<IActivity, IActivity>();
-        private readonly Dictionary<IActivity, IView[]>   activityToViews   = new Dictionary<IActivity, IView[]>();
+        private readonly Transform                         root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
+        private readonly HashSet<IActivity>                showingActivities = new();
+        private readonly Dictionary<GameObject, IActivity> objToActivity     = new();
+        private readonly Dictionary<IActivity, IView[]>    activityToViews   = new();
 
         [Preserve]
-        public UIManager(RootUICanvas canvas, EventSystem eventSystem, IDependencyContainer container, IAssetsManager assetsManager, ILoggerManager loggerManager)
+        public UIManager(RootUICanvas canvas, EventSystem eventSystem, IDependencyContainer container, IObjectPoolManager objectPoolManager, ILoggerManager loggerManager)
         {
-            this.canvas                  = canvas;
-            this.eventSystem             = eventSystem;
-            this.container               = container;
-            this.assetsManager           = assetsManager;
-            this.logger                  = loggerManager.GetLogger(this);
-            canvas.transform.parent      = this.root;
-            eventSystem.transform.parent = this.root;
+            this.canvas            = canvas;
+            this.eventSystem       = eventSystem;
+            this.container         = container;
+            this.objectPoolManager = objectPoolManager;
+            this.logger            = loggerManager.GetLogger(this);
+
+            this.canvas.transform.parent      = this.root;
+            this.eventSystem.transform.parent = this.root;
+
+            this.objectPoolManager.Instantiated += this.OnInstantiated;
+            this.objectPoolManager.Spawned      += this.OnSpawned;
+            this.objectPoolManager.Recycled     += this.OnRecycled;
+            this.objectPoolManager.CleanedUp    += this.OnCleanedUp;
+
             this.logger.Debug("Constructed");
         }
 
@@ -60,12 +63,9 @@ namespace UniT.UI
         event Action<IActivity, IReadOnlyList<IView>> IUIManager.Hidden      { add => this.hidden += value;      remove => this.hidden -= value; }
         event Action<IActivity, IReadOnlyList<IView>> IUIManager.Disposed    { add => this.disposed += value;    remove => this.disposed -= value; }
 
-        IActivity? IUIManager.ShowingScreen => this.showingActivities.SingleOrDefault(activity => activity.Type is ActivityType.Screen);
-
-        IEnumerable<IActivity> IUIManager.ShowingPopups => this.showingActivities.Where(activity => activity.Type is ActivityType.Popup);
-
-        IEnumerable<IActivity> IUIManager.ShowingOverlays => this.showingActivities.Where(activity => activity.Type is ActivityType.Overlay);
-
+        IActivity? IUIManager.            ShowingScreen        => this.showingActivities.SingleOrDefault(activity => activity.Type is ActivityType.Screen);
+        IEnumerable<IActivity> IUIManager.ShowingPopups        => this.showingActivities.Where(activity => activity.Type is ActivityType.Popup);
+        IEnumerable<IActivity> IUIManager.ShowingOverlays      => this.showingActivities.Where(activity => activity.Type is ActivityType.Overlay);
         IEnumerable<IActivity> IUIManager.ShowingOverlayPopups => this.showingActivities.Where(activity => activity.Type is ActivityType.OverlayPopup);
 
         void IUIManager.LockInteraction()
@@ -84,54 +84,53 @@ namespace UniT.UI
             this.logger.Debug("Interaction unlocked");
         }
 
-        TActivity IUIManager.Register<TActivity>(TActivity activity)
-        {
-            this.Initialize(activity);
-            return activity;
-        }
-
-        TActivity IUIManager.Get<TActivity>(IActivity prefab) => this.Get<TActivity>(prefab);
+        void IUIManager.Load(IActivity prefab) => this.objectPoolManager.Load(prefab.gameObject);
 
         #if !UNITY_WEBGL
-        TActivity IUIManager.Get<TActivity>(object key)
-        {
-            var prefab   = this.keyToPrefab.GetOrAdd(key, state => state.assetsManager.LoadComponent<IActivity>(state.key), (this.assetsManager, key));
-            var activity = this.Get<TActivity>(prefab);
-            this.activityToKey.TryAdd(activity, key);
-            return activity;
-        }
+        void IUIManager.Load(object key) => this.objectPoolManager.Load(key);
         #endif
+
+        TActivity IUIManager.Show<TActivity>(TActivity prefab, ActivityShowMode mode)
+        {
+            if (mode is ActivityShowMode.Single) this.objectPoolManager.RecycleAll(prefab.gameObject);
+            return this.objectPoolManager.Spawn<TActivity>(prefab.gameObject);
+        }
+
+        TActivity IUIManager.Show<TActivity, TParams>(TActivity prefab, TParams @params, ActivityShowMode mode)
+        {
+            if (mode is ActivityShowMode.Single) this.objectPoolManager.RecycleAll(prefab.gameObject);
+            this.nextParams = @params;
+            return this.objectPoolManager.Spawn<TActivity>(prefab.gameObject);
+        }
+
+        TActivity IUIManager.Show<TActivity>(object key, ActivityShowMode mode)
+        {
+            if (mode is ActivityShowMode.Single) this.objectPoolManager.RecycleAll(key);
+            return this.objectPoolManager.Spawn<TActivity>(key);
+        }
+
+        TActivity IUIManager.Show<TActivity, TParams>(object key, TParams @params, ActivityShowMode mode)
+        {
+            if (mode is ActivityShowMode.Single) this.objectPoolManager.RecycleAll(key);
+            this.nextParams = @params;
+            return this.objectPoolManager.Spawn<TActivity>(key);
+        }
 
         #if UNIT_UNITASK
-        async UniTask<TActivity> IUIManager.GetAsync<TActivity>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
-        {
-            var prefab   = await this.keyToPrefab.GetOrAddAsync(key, state => state.assetsManager.LoadComponentAsync<IActivity>(state.key, state.progress, state.cancellationToken), (this.assetsManager, key, progress, cancellationToken));
-            var activity = this.Get<TActivity>(prefab);
-            this.activityToKey.TryAdd(activity, key);
-            return activity;
-        }
+        UniTask IUIManager.LoadAsync(object key, IProgress<float>? progress, CancellationToken cancellationToken) => this.objectPoolManager.LoadAsync(key, progress: progress, cancellationToken: cancellationToken);
         #else
-        IEnumerator IUIManager.GetAsync<TActivity>(object key, Action<TActivity> callback, IProgress<float>? progress)
-        {
-            var prefab = default(IActivity)!;
-            yield return this.keyToPrefab.GetOrAddAsync(
-                key,
-                callback => this.assetsManager.LoadComponentAsync(key, callback, progress),
-                result => prefab = result
-            );
-            var activity = this.Get<TActivity>(prefab);
-            this.activityToKey.TryAdd(activity, key);
-            callback(activity);
-        }
+        IEnumerator IUIManager.LoadAsync(object key, Action? callback, IProgress<float>? progress) => this.objectPoolManager.LoadAsync(key, callback: callback, progress: progress);
         #endif
 
-        void IUIManager.Show<TActivity>(TActivity activity, bool force) => this.Show(activity, null, force);
+        void IUIManager.Hide(IActivity activity) => this.objectPoolManager.Recycle(activity.gameObject);
 
-        void IUIManager.Show<TActivity, TParams>(TActivity activity, TParams @params, bool force) => this.Show(activity, @params, force);
+        void IUIManager.HideAll(IActivity prefab) => this.objectPoolManager.RecycleAll(prefab.gameObject);
 
-        void IUIManager.Hide(IActivity activity) => this.Hide(activity);
+        void IUIManager.HideAll(object key) => this.objectPoolManager.RecycleAll(key);
 
-        void IUIManager.Dispose(IActivity activity) => this.Dispose(activity);
+        void IUIManager.Unload(IActivity prefab) => this.objectPoolManager.Unload(prefab.gameObject);
+
+        void IUIManager.Unload(object key) => this.objectPoolManager.Unload(key);
 
         #endregion
 
@@ -142,10 +141,13 @@ namespace UniT.UI
         private Action<IActivity, IReadOnlyList<IView>>? hidden;
         private Action<IActivity, IReadOnlyList<IView>>? disposed;
 
-        private int lockCount;
+        private int    lockCount;
+        private object nextParams = null!;
 
-        private void Initialize(IActivity activity)
+        private void OnInstantiated(GameObject instance)
         {
+            if (!instance.TryGetComponent<IActivity>(out var activity)) return;
+            this.objToActivity.Add(instance, activity);
             var views = activity.gameObject.GetComponentsInChildren<IView>();
             this.activityToViews.Add(activity, views);
             foreach (var view in views.AsSpan())
@@ -156,30 +158,15 @@ namespace UniT.UI
             }
             foreach (var view in views.AsSpan()) view.OnInitialize();
             this.initialized?.Invoke(activity, views);
-            this.logger.Debug($"Initialized {activity.gameObject.name}");
         }
 
-        private TActivity Get<TActivity>(IActivity prefab)
+        private void OnSpawned(GameObject instance)
         {
-            return (TActivity)this.prefabToActivity.GetOrAdd(prefab, state =>
-            {
-                var activity = Object.Instantiate(state.prefab.gameObject, state.@this.canvas.Hiddens).GetComponent<IActivity>();
-                state.@this.Initialize(activity);
-                state.@this.activityToPrefab.Add(activity, state.prefab);
-                return activity;
-            }, (@this: this, prefab));
-        }
-
-        private void Show(IActivity activity, object? @params, bool force)
-        {
-            if (!this.showingActivities.Add(activity) && !force) return;
-            if (activity is IActivityWithParams activityWithParams && @params is { })
-            {
-                activityWithParams.Params = @params;
-            }
+            if (!this.objToActivity.TryGetValue(instance, out var activity)) return;
             if (activity.Type is ActivityType.Screen)
             {
-                this.showingActivities.Where(activity => activity.Type is not ActivityType.Overlay).SafeForEach(this.Hide);
+                this.showingActivities.Where(activity => activity.Type is not ActivityType.Overlay)
+                    .SafeForEach(static (activity, objectPoolManager) => objectPoolManager.Recycle(activity.gameObject), this.objectPoolManager);
             }
             activity.transform.SetParent(activity.Type switch
             {
@@ -189,41 +176,35 @@ namespace UniT.UI
                 ActivityType.OverlayPopup => this.canvas.OverlayPopups,
                 _                         => throw new ArgumentOutOfRangeException(nameof(activity.Type), activity.Type, null),
             }, false);
-            activity.transform.SetAsLastSibling();
+            if (activity is IActivityWithParams activityWithParams)
+            {
+                activityWithParams.Params = this.nextParams;
+            }
             var views = this.activityToViews[activity];
             foreach (var view in views.AsSpan()) view.OnShow();
+            this.showingActivities.Add(activity);
             this.shown?.Invoke(activity, views);
-            this.logger.Debug($"Shown {activity.gameObject.name}");
         }
 
-        private void Hide(IActivity activity)
+        private void OnRecycled(GameObject instance)
         {
-            if (!this.showingActivities.Remove(activity)) return;
-            activity.transform.SetParent(this.canvas.Hiddens, false);
+            if (!this.objToActivity.TryGetValue(instance, out var activity)) return;
             var views = this.activityToViews[activity];
             foreach (var view in views.AsSpan()) view.OnHide();
+            if (activity is IActivityWithParams activityWithParams)
+            {
+                activityWithParams.Params = null;
+            }
+            this.showingActivities.Remove(activity);
             this.hidden?.Invoke(activity, views);
-            this.logger.Debug($"Hidden {activity.gameObject.name}");
         }
 
-        private void Dispose(IActivity activity)
+        private void OnCleanedUp(GameObject instance)
         {
-            this.Hide(activity);
-            if (!this.activityToViews.Remove(activity, out var views)) return;
-            if (this.activityToPrefab.Remove(activity, out var prefab))
-            {
-                this.prefabToActivity.Remove(prefab);
-            }
-            if (this.activityToKey.Remove(activity, out var name))
-            {
-                this.assetsManager.Unload(name);
-                this.keyToPrefab.Remove(name);
-            }
-            var activityName = activity.gameObject.name;
-            Object.Destroy(activity.gameObject);
+            if (!this.objToActivity.Remove(instance, out var activity)) return;
+            this.activityToViews.Remove(activity, out var views);
             foreach (var view in views.AsSpan()) view.OnDispose();
             this.disposed?.Invoke(activity, views);
-            this.logger.Debug($"Disposed {activityName}");
         }
 
         #endregion

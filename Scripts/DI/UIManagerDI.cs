@@ -4,7 +4,7 @@ namespace UniT.UI.DI
 {
     using UniT.DI;
     using UniT.Logging.DI;
-    using UniT.ResourceManagement.DI;
+    using UniT.Pooling.DI;
     using UnityEngine.EventSystems;
 
     public static class UIManagerDI
@@ -13,7 +13,7 @@ namespace UniT.UI.DI
         {
             if (container.Contains<IUIManager>()) return;
             container.AddLoggerManager();
-            container.AddAssetsManager();
+            container.AddObjectPoolManager();
             container.AddFromComponentInNewPrefabResource<RootUICanvas>(nameof(RootUICanvas));
             container.AddFromComponentInNewPrefabResource<EventSystem>(nameof(EventSystem));
             container.AddInterfaces<UIManager>();

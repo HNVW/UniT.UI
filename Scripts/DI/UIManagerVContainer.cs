@@ -3,7 +3,7 @@
 namespace UniT.UI.DI
 {
     using UniT.Logging.DI;
-    using UniT.ResourceManagement.DI;
+    using UniT.Pooling.DI;
     using UnityEngine.EventSystems;
     using VContainer;
 
@@ -14,7 +14,7 @@ namespace UniT.UI.DI
             if (builder.Exists(typeof(IUIManager), true)) return;
             builder.RegisterDependencyContainer();
             builder.RegisterLoggerManager();
-            builder.RegisterAssetsManager();
+            builder.RegisterObjectPoolManager();
             builder.RegisterComponentInNewPrefabResource<RootUICanvas>(nameof(RootUICanvas), Lifetime.Singleton);
             builder.RegisterComponentInNewPrefabResource<EventSystem>(nameof(EventSystem), Lifetime.Singleton);
             builder.Register<UIManager>(Lifetime.Singleton).AsImplementedInterfaces();
