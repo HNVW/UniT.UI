@@ -2,9 +2,7 @@
 namespace UniT.UI
 {
     using UnityEngine;
-    using UnityEngine.UI;
 
-    [RequireComponent(typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))]
     public sealed class RootUICanvas : MonoBehaviour
     {
         public Transform Screens       { get; private set; } = null!;
