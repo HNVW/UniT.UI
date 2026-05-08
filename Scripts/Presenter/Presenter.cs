@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 namespace UniT.UI.Presenter
 {
     public abstract class Presenter<TView> : IPresenter where TView : IViewWithPresenter
