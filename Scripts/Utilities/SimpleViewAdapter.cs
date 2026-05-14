@@ -12,7 +12,7 @@ namespace UniT.UI.Utilities
         [SerializeField] private TView         prefab  = default!;
 
         private readonly Dictionary<IView, IView[]> views        = new();
-        private readonly Queue<TView>               pooledViews  = new();
+        private readonly Stack<TView>               pooledViews  = new();
         private readonly HashSet<TView>             spawnedViews = new();
 
         public void Set(IEnumerable<TParams> allParams)
@@ -20,7 +20,7 @@ namespace UniT.UI.Utilities
             this.OnHide();
             foreach (var @params in allParams)
             {
-                var view = this.pooledViews.DequeueOrDefault(static @this =>
+                var view = this.pooledViews.PopOrDefault(static @this =>
                 {
                     var view       = Instantiate(@this.prefab.gameObject, @this.content).GetComponentOrThrow<TView>();
                     var childViews = view.gameObject.GetComponentsInChildren<IView>();
@@ -48,7 +48,7 @@ namespace UniT.UI.Utilities
             {
                 view.gameObject.SetActive(false);
                 foreach (var childView in this.views[view].AsSpan()) childView.OnHide();
-                this.pooledViews.Enqueue(view);
+                this.pooledViews.Push(view);
             });
         }
 
