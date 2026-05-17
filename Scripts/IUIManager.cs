@@ -12,7 +12,7 @@ namespace UniT.UI
     using System.Collections;
     #endif
 
-    public interface IUIManager
+    public interface IUIManager : IDisposable
     {
         public event Action<IActivity, IReadOnlyList<IView>> Initialized;
 
@@ -37,7 +37,7 @@ namespace UniT.UI
         public void Load(IActivity prefab);
 
         #if !UNITY_WEBGL
-        public void Load(object key);
+        public void Load(object key, int count = 1);
         #endif
 
         public TActivity Show<TActivity>(TActivity prefab, ActivityShowMode mode = ActivityShowMode.Single) where TActivity : IActivityWithoutParams;
@@ -62,7 +62,7 @@ namespace UniT.UI
 
         #if !UNITY_WEBGL
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Load<TActivity>() where TActivity : IActivity => this.Load(typeof(TActivity).GetKey());
+        public void Load<TActivity>(int count = 1) where TActivity : IActivity => this.Load(typeof(TActivity).GetKey(), count);
         #endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -82,15 +82,15 @@ namespace UniT.UI
         #region Async
 
         #if UNIT_UNITASK
-        public UniTask LoadAsync(object key, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
+        public UniTask LoadAsync(object key, int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public UniTask LoadAsync<TActivity>(IProgress<float>? progress = null, CancellationToken cancellationToken = default) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), progress, cancellationToken);
+        public UniTask LoadAsync<TActivity>(int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), count, progress, cancellationToken);
         #else
-        public IEnumerator LoadAsync(object key, Action? callback = null, IProgress<float>? progress = null);
+        public IEnumerator LoadAsync(object key, int count = 1, Action? callback = null, IProgress<float>? progress = null);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerator LoadAsync<TActivity>(Action? callback = null, IProgress<float>? progress = null) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), callback, progress);
+        public IEnumerator LoadAsync<TActivity>(int count = 1, Action? callback = null, IProgress<float>? progress = null) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), count, callback, progress);
         #endif
 
         #endregion

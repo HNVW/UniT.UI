@@ -12,6 +12,7 @@ namespace UniT.UI
     using UnityEngine.EventSystems;
     using UnityEngine.Scripting;
     using ILogger = UniT.Logging.ILogger;
+    using Object = UnityEngine.Object;
     #if UNIT_UNITASK
     using System.Threading;
     using Cysharp.Threading.Tasks;
@@ -30,6 +31,8 @@ namespace UniT.UI
         private readonly ILogger              logger;
 
         private readonly Transform                         root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
+        private readonly HashSet<object>                   trackingKeys      = new();
+        private readonly HashSet<GameObject>               trackingPrefabs   = new();
         private readonly HashSet<IActivity>                showingActivities = new();
         private readonly Dictionary<GameObject, IActivity> objToActivity     = new();
         private readonly Dictionary<IActivity, IView[]>    activityToViews   = new();
@@ -84,10 +87,32 @@ namespace UniT.UI
             this.logger.Debug("Interaction unlocked");
         }
 
-        void IUIManager.Load(IActivity prefab) => this.objectPoolManager.Load(prefab.gameObject);
+        void IUIManager.Load(IActivity prefab)
+        {
+            this.trackingPrefabs.Add(prefab.gameObject);
+            this.objectPoolManager.Load(prefab.gameObject);
+        }
 
         #if !UNITY_WEBGL
-        void IUIManager.Load(object key) => this.objectPoolManager.Load(key);
+        void IUIManager.Load(object key, int count)
+        {
+            this.trackingKeys.Add(key);
+            this.objectPoolManager.Load(key, count);
+        }
+        #endif
+
+        #if UNIT_UNITASK
+        UniTask IUIManager.LoadAsync(object key, int count, IProgress<float>? progress, CancellationToken cancellationToken)
+        {
+            this.trackingKeys.Add(key);
+            return this.objectPoolManager.LoadAsync(key, count, progress, cancellationToken);
+        }
+        #else
+        IEnumerator IUIManager.LoadAsync(object key, int count, Action? callback, IProgress<float>? progress)
+        {
+            this.trackingKeys.Add(key);
+            return this.objectPoolManager.LoadAsync(key, count, callback, progress);
+        }
         #endif
 
         TActivity IUIManager.Show<TActivity>(TActivity prefab, ActivityShowMode mode)
@@ -116,21 +141,23 @@ namespace UniT.UI
             return this.objectPoolManager.Spawn<TActivity>(key);
         }
 
-        #if UNIT_UNITASK
-        UniTask IUIManager.LoadAsync(object key, IProgress<float>? progress, CancellationToken cancellationToken) => this.objectPoolManager.LoadAsync(key, progress: progress, cancellationToken: cancellationToken);
-        #else
-        IEnumerator IUIManager.LoadAsync(object key, Action? callback, IProgress<float>? progress) => this.objectPoolManager.LoadAsync(key, callback: callback, progress: progress);
-        #endif
-
         void IUIManager.Hide(IActivity activity) => this.objectPoolManager.Recycle(activity.gameObject);
 
         void IUIManager.HideAll(IActivity prefab) => this.objectPoolManager.RecycleAll(prefab.gameObject);
 
         void IUIManager.HideAll(object key) => this.objectPoolManager.RecycleAll(key);
 
-        void IUIManager.Unload(IActivity prefab) => this.objectPoolManager.Unload(prefab.gameObject);
+        void IUIManager.Unload(IActivity prefab)
+        {
+            this.trackingPrefabs.Remove(prefab.gameObject);
+            this.objectPoolManager.Unload(prefab.gameObject);
+        }
 
-        void IUIManager.Unload(object key) => this.objectPoolManager.Unload(key);
+        void IUIManager.Unload(object key)
+        {
+            this.trackingKeys.Remove(key);
+            this.objectPoolManager.Unload(key);
+        }
 
         #endregion
 
@@ -205,6 +232,29 @@ namespace UniT.UI
             this.activityToViews.Remove(activity, out var views);
             foreach (var view in views.AsSpan()) view.OnDispose();
             this.disposed?.Invoke(activity, views);
+        }
+
+        #endregion
+
+        #region Finalizer
+
+        private void Dispose()
+        {
+            this.trackingKeys.Clear(this.objectPoolManager.Unload);
+            this.trackingPrefabs.Clear(this.objectPoolManager.Unload);
+            if (this.root) Object.Destroy(this.root.gameObject);
+        }
+
+        void IDisposable.Dispose()
+        {
+            this.Dispose();
+            this.logger.Debug("Disposed");
+        }
+
+        ~UIManager()
+        {
+            this.Dispose();
+            this.logger.Debug("Finalized");
         }
 
         #endregion
