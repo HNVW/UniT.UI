@@ -1,0 +1,18 @@
+{
+  "name": "UniT.UI",
+  "rootNamespace": "UniT.UI",
+  "references": [
+    "UniT.Extensions",
+    "UniT.Logging",
+    "UniT.Pooling",
+    "UniT.DI",
+    "UniTask"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.cysharp.unitask",
+      "expression": "",
+      "define": "UNIT_UNITASK"
+    }
+  ]
+}
