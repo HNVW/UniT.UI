@@ -4,6 +4,8 @@ namespace UniT.UI
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
+    using Cysharp.Threading.Tasks;
     using UniT.DI;
     using UniT.Extensions;
     using UniT.Logging;
@@ -13,12 +15,6 @@ namespace UniT.UI
     using UnityEngine.Scripting;
     using ILogger = UniT.Logging.ILogger;
     using Object = UnityEngine.Object;
-    #if UNIT_UNITASK
-    using System.Threading;
-    using Cysharp.Threading.Tasks;
-    #else
-    using System.Collections;
-    #endif
 
     public sealed class UIManager : IUIManager
     {
@@ -93,27 +89,11 @@ namespace UniT.UI
             this.objectPoolManager.Load(prefab.gameObject);
         }
 
-        #if !UNITY_WEBGL
-        void IUIManager.Load(object key, int count)
-        {
-            this.trackingKeys.Add(key);
-            this.objectPoolManager.Load(key, count);
-        }
-        #endif
-
-        #if UNIT_UNITASK
         UniTask IUIManager.LoadAsync(object key, int count, IProgress<float>? progress, CancellationToken cancellationToken)
         {
             this.trackingKeys.Add(key);
             return this.objectPoolManager.LoadAsync(key, count, progress, cancellationToken);
         }
-        #else
-        IEnumerator IUIManager.LoadAsync(object key, int count, Action? callback, IProgress<float>? progress)
-        {
-            this.trackingKeys.Add(key);
-            return this.objectPoolManager.LoadAsync(key, count, callback, progress);
-        }
-        #endif
 
         TActivity IUIManager.Show<TActivity>(TActivity prefab, ActivityShowMode mode)
         {

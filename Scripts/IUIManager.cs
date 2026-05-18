@@ -4,13 +4,9 @@ namespace UniT.UI
     using System;
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
-    using UniT.Extensions;
-    #if UNIT_UNITASK
     using System.Threading;
     using Cysharp.Threading.Tasks;
-    #else
-    using System.Collections;
-    #endif
+    using UniT.Extensions;
 
     public interface IUIManager : IDisposable
     {
@@ -36,9 +32,7 @@ namespace UniT.UI
 
         public void Load(IActivity prefab);
 
-        #if !UNITY_WEBGL
-        public void Load(object key, int count = 1);
-        #endif
+        public UniTask LoadAsync(object key, int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
         public TActivity Show<TActivity>(TActivity prefab, ActivityShowMode mode = ActivityShowMode.Single) where TActivity : IActivityWithoutParams;
 
@@ -60,10 +54,8 @@ namespace UniT.UI
 
         #region Implicit Key
 
-        #if !UNITY_WEBGL
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Load<TActivity>(int count = 1) where TActivity : IActivity => this.Load(typeof(TActivity).GetKey(), count);
-        #endif
+        public UniTask LoadAsync<TActivity>(int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), count, progress, cancellationToken);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TActivity Show<TActivity>(ActivityShowMode mode = ActivityShowMode.Single) where TActivity : IActivityWithoutParams => this.Show<TActivity>(typeof(TActivity).GetKey(), mode);
@@ -76,22 +68,6 @@ namespace UniT.UI
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Unload<TActivity>() where TActivity : IActivity => this.Unload(typeof(TActivity).GetKey());
-
-        #endregion
-
-        #region Async
-
-        #if UNIT_UNITASK
-        public UniTask LoadAsync(object key, int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public UniTask LoadAsync<TActivity>(int count = 1, IProgress<float>? progress = null, CancellationToken cancellationToken = default) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), count, progress, cancellationToken);
-        #else
-        public IEnumerator LoadAsync(object key, int count = 1, Action? callback = null, IProgress<float>? progress = null);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerator LoadAsync<TActivity>(int count = 1, Action? callback = null, IProgress<float>? progress = null) where TActivity : IActivity => this.LoadAsync(typeof(TActivity).GetKey(), count, callback, progress);
-        #endif
 
         #endregion
     }

@@ -7,12 +7,5 @@
     "UniT.Pooling",
     "UniT.DI",
     "UniTask"
-  ],
-  "versionDefines": [
-    {
-      "name": "com.cysharp.unitask",
-      "expression": "",
-      "define": "UNIT_UNITASK"
-    }
   ]
 }
