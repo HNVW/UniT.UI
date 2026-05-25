@@ -42,7 +42,7 @@ namespace UniT.UI
 
         public TActivity Show<TActivity, TParams>(object key, TParams @params, ActivityShowMode mode = ActivityShowMode.Single) where TActivity : IActivityWithParams<TParams> where TParams : notnull;
 
-        public void Hide(IActivity activity);
+        public void Hide(IActivity instance);
 
         public void HideAll(IActivity prefab);
 

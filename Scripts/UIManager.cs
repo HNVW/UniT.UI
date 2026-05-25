@@ -121,7 +121,11 @@ namespace UniT.UI
             return this.objectPoolManager.Spawn<TActivity>(key);
         }
 
-        void IUIManager.Hide(IActivity activity) => this.objectPoolManager.Recycle(activity.gameObject);
+        void IUIManager.Hide(IActivity instance)
+        {
+            if (instance.Equals(null)) return;
+            this.objectPoolManager.Recycle(instance.gameObject);
+        }
 
         void IUIManager.HideAll(IActivity prefab) => this.objectPoolManager.RecycleAll(prefab.gameObject);
 
