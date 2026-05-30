@@ -1,10 +1,7 @@
 {
   "name": "UniT.UI",
-  "rootNamespace": "UniT.UI",
   "references": [
     "UniT.Extensions",
-    "UniT.Logging",
-    "UniT.Pooling",
     "UniT.DI",
     "UniTask"
   ]

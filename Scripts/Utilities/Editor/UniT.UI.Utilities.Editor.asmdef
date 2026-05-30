@@ -1,0 +1,9 @@
+{
+  "name": "UniT.UI.Utilities.Editor",
+  "references": [
+    "UniT.UI.Utilities"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

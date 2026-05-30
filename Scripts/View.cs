@@ -3,11 +3,10 @@ namespace UniT.UI
 {
     using System;
     using UniT.DI;
-    using UniT.Extensions;
     using UnityEngine;
 
     [RequireComponent(typeof(RectTransform))]
-    public abstract class BaseView : BetterMonoBehavior, IView
+    public abstract class BaseView : MonoBehaviour, IView
     {
         IDependencyContainer IView.Container { set => this.Container = value; }
 

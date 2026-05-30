@@ -1,0 +1,8 @@
+{
+  "name": "UniT.UI.Presenter",
+  "references": [
+    "UniT.UI",
+    "UniT.Extensions",
+    "UniT.DI"
+  ]
+}

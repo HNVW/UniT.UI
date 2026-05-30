@@ -1,0 +1,7 @@
+{
+  "name": "UniT.UI.Utilities",
+  "references": [
+    "UniT.UI",
+    "UniT.Extensions"
+  ]
+}

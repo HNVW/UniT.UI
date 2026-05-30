@@ -15,9 +15,6 @@ namespace UniT.UI
 
         // ReSharper disable once InconsistentNaming
         public GameObject gameObject { get; }
-
-        // ReSharper disable once InconsistentNaming
-        public Transform transform { get; }
     }
 
     public interface IViewWithoutParams : IView

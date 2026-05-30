@@ -1,0 +1,11 @@
+{
+  "name": "UniT.UI.Default",
+  "references": [
+    "UniT.UI",
+    "UniT.Extensions",
+    "UniT.Logging",
+    "UniT.Pooling",
+    "UniT.DI",
+    "UniTask"
+  ]
+}
