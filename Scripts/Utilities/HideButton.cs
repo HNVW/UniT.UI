@@ -5,11 +5,11 @@ namespace UniT.UI.Utilities
     using UnityEngine.UI;
 
     [RequireComponent(typeof(Button))]
-    public sealed class HideButton : View
+    public sealed class HideButton : GenericButton
     {
-        protected override void OnInitialize()
+        protected override void OnClick()
         {
-            this.GetComponent<Button>().onClick.AddListener(() => this.Manager.Hide(this.Activity));
+            this.Manager.Hide(this.Activity);
         }
     }
 }

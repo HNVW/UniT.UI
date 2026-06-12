@@ -186,6 +186,20 @@ namespace UniT.UI.Default
             this.objectPoolManager.Unload(key);
         }
 
+        void IDisposable.Dispose()
+        {
+            this.trackingKeys.Clear(this.objectPoolManager.Unload);
+            this.trackingPrefabs.Clear(this.objectPoolManager.Unload);
+            if (this.root) Object.Destroy(this.root.gameObject);
+
+            this.objectPoolManager.Instantiated -= this.OnInstantiated;
+            this.objectPoolManager.Spawned      -= this.OnSpawned;
+            this.objectPoolManager.Recycled     -= this.OnRecycled;
+            this.objectPoolManager.CleanedUp    -= this.OnCleanedUp;
+
+            this.logger.Debug("Disposed");
+        }
+
         #endregion
 
         #region Private
@@ -261,29 +275,6 @@ namespace UniT.UI.Default
             foreach (var child in children.AsSpan()) child.OnDispose();
             if (view is not IActivity activity) return;
             this.disposed?.Invoke(activity, children);
-        }
-
-        #endregion
-
-        #region Finalizer
-
-        private void Dispose()
-        {
-            this.trackingKeys.Clear(this.objectPoolManager.Unload);
-            this.trackingPrefabs.Clear(this.objectPoolManager.Unload);
-            if (this.root) Object.Destroy(this.root.gameObject);
-        }
-
-        void IDisposable.Dispose()
-        {
-            this.Dispose();
-            this.logger.Debug("Disposed");
-        }
-
-        ~UIManager()
-        {
-            this.Dispose();
-            this.logger.Debug("Finalized");
         }
 
         #endregion
