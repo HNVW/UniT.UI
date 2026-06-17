@@ -209,9 +209,9 @@ namespace UniT.UI.Default
         private Action<IActivity, IReadOnlyList<IView>>? hidden;
         private Action<IActivity, IReadOnlyList<IView>>? disposed;
 
-        private int       lockCount;
-        private object    nextParams   = null!;
-        private IActivity nextActivity = null!;
+        private int        lockCount;
+        private object?    nextParams;
+        private IActivity? nextActivity;
 
         private void OnInstantiated(GameObject instance)
         {
@@ -219,7 +219,7 @@ namespace UniT.UI.Default
             this.objToViews.Add(instance, view);
             var children = view.gameObject.GetComponentsInChildren<IView>();
             this.viewToChildren.Add(view, children);
-            var root = view as IActivity ?? this.nextActivity;
+            var root = (view as IActivity)!;
             foreach (var child in children.AsSpan())
             {
                 child.Container = this.container;
@@ -243,9 +243,15 @@ namespace UniT.UI.Default
                 }
                 view.gameObject.transform.SetParent(this.activityRoots[type], false);
             }
-            if (view is IViewWithParams viewWithParams)
+            if (this.nextParams is not null)
             {
-                viewWithParams.Params = this.nextParams;
+                ((IViewWithParams)view).Params = this.nextParams;
+                this.nextParams                = null;
+            }
+            if (this.nextActivity is not null)
+            {
+                view.Activity     = this.nextActivity;
+                this.nextActivity = null;
             }
             var children = this.viewToChildren[view];
             foreach (var child in children.AsSpan()) child.OnShow();
