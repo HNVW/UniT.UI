@@ -34,7 +34,7 @@ namespace UniT.UI
             {
                 null            => default,
                 TParams @params => @params,
-                _               => throw new InvalidCastException($"{this.GetType().Name} expected params of type {typeof(TParams)}, got {value.GetType().Name}"),
+                _               => throw new InvalidOperationException($"{this.GetType().Name} expected params of type {typeof(TParams)}, got {value.GetType().Name}"),
             };
         }
 
