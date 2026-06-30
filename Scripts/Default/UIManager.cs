@@ -16,7 +16,7 @@ namespace UniT.UI.Default
     using ILogger = UniT.Logging.ILogger;
     using Object = UnityEngine.Object;
 
-    public sealed class UIManager : IUIManager
+    public sealed class UIManager : IUIManager, IDisposable
     {
         #region Constructor
 
@@ -27,12 +27,11 @@ namespace UniT.UI.Default
 
         private readonly IReadOnlyDictionary<ActivityType, Transform> activityRoots;
 
-        private readonly Transform                     root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
-        private readonly HashSet<object>               trackingKeys      = new();
-        private readonly HashSet<GameObject>           trackingPrefabs   = new();
-        private readonly HashSet<IActivity>            showingActivities = new();
-        private readonly Dictionary<GameObject, IView> objToViews        = new();
-        private readonly Dictionary<IView, IView[]>    viewToChildren    = new();
+        private readonly Transform                                              root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
+        private readonly HashSet<object>                                        trackingKeys      = new();
+        private readonly HashSet<GameObject>                                    trackingPrefabs   = new();
+        private readonly HashSet<IActivity>                                     showingActivities = new();
+        private readonly Dictionary<GameObject, (IView View, IView[] Children)> objToViews        = new();
 
         [Preserve]
         public UIManager(Canvas canvas, EventSystem eventSystem, IDependencyContainer container, IObjectPoolManager objectPoolManager, ILoggerManager loggerManager)
@@ -216,9 +215,8 @@ namespace UniT.UI.Default
         private void OnInstantiated(GameObject instance)
         {
             if (!instance.TryGetComponent<IView>(out var view)) return;
-            this.objToViews.Add(instance, view);
             var children = view.gameObject.GetComponentsInChildren<IView>();
-            this.viewToChildren.Add(view, children);
+            this.objToViews.Add(instance, (view, children));
             var root = (view as IActivity)!;
             foreach (var child in children.AsSpan())
             {
@@ -233,7 +231,8 @@ namespace UniT.UI.Default
 
         private void OnSpawned(GameObject instance)
         {
-            if (!this.objToViews.TryGetValue(instance, out var view)) return;
+            if (!this.objToViews.TryGetValue(instance, out var value)) return;
+            var (view, children) = value;
             if (view is IActivity { Type: var type })
             {
                 if (type is ActivityType.Screen)
@@ -253,7 +252,6 @@ namespace UniT.UI.Default
                 view.Activity     = this.nextActivity;
                 this.nextActivity = null;
             }
-            var children = this.viewToChildren[view];
             foreach (var child in children.AsSpan()) child.OnShow();
             if (view is not IActivity activity) return;
             this.showingActivities.Add(activity);
@@ -262,8 +260,8 @@ namespace UniT.UI.Default
 
         private void OnRecycled(GameObject instance)
         {
-            if (!this.objToViews.TryGetValue(instance, out var view)) return;
-            var children = this.viewToChildren[view];
+            if (!this.objToViews.TryGetValue(instance, out var value)) return;
+            var (view, children) = value;
             foreach (var child in children.AsSpan()) child.OnHide();
             if (view is IViewWithParams viewWithParams)
             {
@@ -276,8 +274,8 @@ namespace UniT.UI.Default
 
         private void OnCleanedUp(GameObject instance)
         {
-            if (!this.objToViews.Remove(instance, out var view)) return;
-            this.viewToChildren.Remove(view, out var children);
+            if (!this.objToViews.Remove(instance, out var value)) return;
+            var (view, children) = value;
             foreach (var child in children.AsSpan()) child.OnDispose();
             if (view is not IActivity activity) return;
             this.disposed?.Invoke(activity, children);
