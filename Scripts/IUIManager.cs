@@ -9,7 +9,7 @@ namespace UniT.UI
     using UniT.Extensions;
     using UnityEngine;
 
-    public interface IUIManager : IDisposable
+    public interface IUIManager
     {
         public event Action<IActivity, IReadOnlyList<IView>> Initialized;
 

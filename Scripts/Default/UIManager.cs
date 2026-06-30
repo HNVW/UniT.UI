@@ -16,7 +16,7 @@ namespace UniT.UI.Default
     using ILogger = UniT.Logging.ILogger;
     using Object = UnityEngine.Object;
 
-    public sealed class UIManager : IUIManager
+    public sealed class UIManager : IUIManager, IDisposable
     {
         #region Constructor
 
