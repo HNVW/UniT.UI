@@ -1,5 +1,6 @@
 {
   "name": "UniT.UI.Utilities.Editor",
+  "overrideReferences": true,
   "references": [
     "UniT.UI.Utilities"
   ],

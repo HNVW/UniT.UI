@@ -1,5 +1,6 @@
 {
   "name": "UniT.UI.Utilities",
+  "overrideReferences": true,
   "references": [
     "UniT.UI",
     "UniT.Extensions"

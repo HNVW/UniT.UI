@@ -1,5 +1,6 @@
 {
   "name": "UniT.UI.Default.InternalDI",
+  "overrideReferences": true,
   "references": [
     "UniT.UI.Default",
     "UniT.DI.InternalDI"

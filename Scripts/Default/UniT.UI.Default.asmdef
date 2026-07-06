@@ -1,5 +1,6 @@
 {
   "name": "UniT.UI.Default",
+  "overrideReferences": true,
   "references": [
     "UniT.UI",
     "UniT.Extensions",

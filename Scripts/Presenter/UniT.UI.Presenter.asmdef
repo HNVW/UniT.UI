@@ -1,5 +1,6 @@
 {
   "name": "UniT.UI.Presenter",
+  "overrideReferences": true,
   "references": [
     "UniT.UI",
     "UniT.Extensions",
