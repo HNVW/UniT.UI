@@ -7,8 +7,8 @@ namespace UniT.UI.Utilities
     [RequireComponent(typeof(Button))]
     public abstract class ShowActivityByPrefabButton<TActivity> : GenericButton where TActivity : IActivityWithoutParams
     {
-        [SerializeField] private TActivity        prefab = default!;
-        [SerializeField] private ActivityShowMode mode   = ActivityShowMode.Single;
+        [SerializeField] private TActivity prefab = default!;
+        [SerializeField] private ActivityShowMode mode = ActivityShowMode.Single;
 
         protected override void OnClick()
         {
@@ -19,9 +19,9 @@ namespace UniT.UI.Utilities
     [RequireComponent(typeof(Button))]
     public abstract class ShowActivityByPrefabButton<TActivity, TParams> : GenericButton where TActivity : IActivityWithParams<TParams> where TParams : notnull
     {
-        [SerializeField]     private TActivity        prefab  = default!;
-        [SerializeReference] private TParams          @params = default!;
-        [SerializeField]     private ActivityShowMode mode    = ActivityShowMode.Single;
+        [SerializeField] private TActivity prefab = default!;
+        [SerializeReference] private TParams @params = default!;
+        [SerializeField] private ActivityShowMode mode = ActivityShowMode.Single;
 
         protected override void OnClick()
         {
@@ -32,7 +32,7 @@ namespace UniT.UI.Utilities
     [RequireComponent(typeof(Button))]
     public abstract class ShowActivityByKeyButton<TActivity> : GenericButton where TActivity : IActivityWithoutParams
     {
-        [SerializeField] private string           key  = string.Empty;
+        [SerializeField] private string key = string.Empty;
         [SerializeField] private ActivityShowMode mode = ActivityShowMode.Single;
 
         protected override void OnClick()
@@ -44,9 +44,9 @@ namespace UniT.UI.Utilities
     [RequireComponent(typeof(Button))]
     public abstract class ShowActivityByKeyButton<TActivity, TParams> : GenericButton where TActivity : IActivityWithParams<TParams> where TParams : notnull
     {
-        [SerializeField]     private string           key     = string.Empty;
-        [SerializeReference] private TParams          @params = default!;
-        [SerializeField]     private ActivityShowMode mode    = ActivityShowMode.Single;
+        [SerializeField] private string key = string.Empty;
+        [SerializeReference] private TParams @params = default!;
+        [SerializeField] private ActivityShowMode mode = ActivityShowMode.Single;
 
         protected override void OnClick()
         {
@@ -68,8 +68,8 @@ namespace UniT.UI.Utilities
     [RequireComponent(typeof(Button))]
     public abstract class ShowActivityByTypeButton<TActivity, TParams> : GenericButton where TActivity : IActivityWithParams<TParams> where TParams : notnull
     {
-        [SerializeReference] private TParams          @params = default!;
-        [SerializeField]     private ActivityShowMode mode    = ActivityShowMode.Single;
+        [SerializeReference] private TParams @params = default!;
+        [SerializeField] private ActivityShowMode mode = ActivityShowMode.Single;
 
         protected override void OnClick()
         {

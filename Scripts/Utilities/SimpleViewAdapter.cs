@@ -7,7 +7,7 @@ namespace UniT.UI.Utilities
     public abstract class SimpleViewAdapter<TParams, TView> : View where TView : IViewWithParams<TParams> where TParams : notnull
     {
         [SerializeField] private RectTransform content = null!;
-        [SerializeField] private TView         prefab  = default!;
+        [SerializeField] private TView prefab = default!;
 
         protected override void OnInitialize()
         {

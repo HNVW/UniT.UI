@@ -13,37 +13,37 @@ namespace UniT.UI.Default
     using UnityEngine;
     using UnityEngine.EventSystems;
     using UnityEngine.Scripting;
-    using ILogger = UniT.Logging.ILogger;
+    using ILogger = Logging.ILogger;
     using Object = UnityEngine.Object;
 
     public sealed class UIManager : IUIManager, IDisposable
     {
         #region Constructor
 
-        private readonly EventSystem          eventSystem;
+        private readonly EventSystem eventSystem;
         private readonly IDependencyContainer container;
-        private readonly IObjectPoolManager   objectPoolManager;
-        private readonly ILogger              logger;
+        private readonly IObjectPoolManager objectPoolManager;
+        private readonly ILogger logger;
 
         private readonly IReadOnlyDictionary<ActivityType, Transform> activityRoots;
 
-        private readonly Transform                                              root              = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
-        private readonly HashSet<object>                                        trackingKeys      = new();
-        private readonly HashSet<GameObject>                                    trackingPrefabs   = new();
-        private readonly HashSet<IActivity>                                     showingActivities = new();
-        private readonly Dictionary<GameObject, (IView View, IView[] Children)> objToViews        = new();
+        private readonly Transform root = new GameObject(nameof(UIManager)).DontDestroyOnLoad().transform;
+        private readonly HashSet<object> trackingKeys = new();
+        private readonly HashSet<GameObject> trackingPrefabs = new();
+        private readonly HashSet<IActivity> showingActivities = new();
+        private readonly Dictionary<GameObject, (IView View, IView[] Children)> objToViews = new();
 
         [Preserve]
         public UIManager(Canvas canvas, EventSystem eventSystem, IDependencyContainer container, IObjectPoolManager objectPoolManager, ILoggerManager loggerManager)
         {
-            this.eventSystem       = eventSystem;
-            this.container         = container;
+            this.eventSystem = eventSystem;
+            this.container = container;
             this.objectPoolManager = objectPoolManager;
-            this.logger            = loggerManager.GetLogger(this);
+            this.logger = loggerManager.GetLogger(this);
 
             var canvasTransform = canvas.transform;
 
-            canvasTransform.parent            = this.root;
+            canvasTransform.parent = this.root;
             this.eventSystem.transform.parent = this.root;
 
             this.activityRoots = Enum.GetValues(typeof(ActivityType))
@@ -62,9 +62,9 @@ namespace UniT.UI.Default
                 );
 
             this.objectPoolManager.Instantiated += this.OnInstantiated;
-            this.objectPoolManager.Spawned      += this.OnSpawned;
-            this.objectPoolManager.Recycled     += this.OnRecycled;
-            this.objectPoolManager.CleanedUp    += this.OnCleanedUp;
+            this.objectPoolManager.Spawned += this.OnSpawned;
+            this.objectPoolManager.Recycled += this.OnRecycled;
+            this.objectPoolManager.CleanedUp += this.OnCleanedUp;
 
             this.logger.Debug("Constructed");
         }
@@ -74,14 +74,14 @@ namespace UniT.UI.Default
         #region Public
 
         event Action<IActivity, IReadOnlyList<IView>> IUIManager.Initialized { add => this.initialized += value; remove => this.initialized -= value; }
-        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Shown       { add => this.shown += value;       remove => this.shown -= value; }
-        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Hidden      { add => this.hidden += value;      remove => this.hidden -= value; }
-        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Disposed    { add => this.disposed += value;    remove => this.disposed -= value; }
+        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Shown { add => this.shown += value; remove => this.shown -= value; }
+        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Hidden { add => this.hidden += value; remove => this.hidden -= value; }
+        event Action<IActivity, IReadOnlyList<IView>> IUIManager.Disposed { add => this.disposed += value; remove => this.disposed -= value; }
 
-        IActivity? IUIManager.            ShowingScreen        => this.showingActivities.SingleOrDefault(activity => activity.Type is ActivityType.Screen);
-        IEnumerable<IActivity> IUIManager.ShowingPopups        => this.showingActivities.Where(activity => activity.Type is ActivityType.Popup);
-        IEnumerable<IActivity> IUIManager.ShowingOverlays      => this.showingActivities.Where(activity => activity.Type is ActivityType.Overlay);
-        IEnumerable<IActivity> IUIManager.ShowingOverlayPopups => this.showingActivities.Where(activity => activity.Type is ActivityType.OverlayPopup);
+        IActivity? IUIManager.ShowingScreen => this.showingActivities.SingleOrDefault(static activity => activity.Type is ActivityType.Screen);
+        IEnumerable<IActivity> IUIManager.ShowingPopups => this.showingActivities.Where(static activity => activity.Type is ActivityType.Popup);
+        IEnumerable<IActivity> IUIManager.ShowingOverlays => this.showingActivities.Where(static activity => activity.Type is ActivityType.Overlay);
+        IEnumerable<IActivity> IUIManager.ShowingOverlayPopups => this.showingActivities.Where(static activity => activity.Type is ActivityType.OverlayPopup);
 
         void IUIManager.LockInteraction()
         {
@@ -145,7 +145,7 @@ namespace UniT.UI.Default
 
         TView IUIManager.Show<TView, TParams>(TView prefab, TParams @params, IActivity activity, Transform? parent)
         {
-            this.nextParams   = @params;
+            this.nextParams = @params;
             this.nextActivity = activity;
             return this.objectPoolManager.Spawn<TView>(prefab.gameObject, parent: parent, spawnInWorldSpace: false);
         }
@@ -158,7 +158,7 @@ namespace UniT.UI.Default
 
         TView IUIManager.Show<TView, TParams>(object key, TParams @params, IActivity activity, Transform? parent)
         {
-            this.nextParams   = @params;
+            this.nextParams = @params;
             this.nextActivity = activity;
             return this.objectPoolManager.Spawn<TView>(key, parent: parent, spawnInWorldSpace: false);
         }
@@ -192,9 +192,9 @@ namespace UniT.UI.Default
             if (this.root) Object.Destroy(this.root.gameObject);
 
             this.objectPoolManager.Instantiated -= this.OnInstantiated;
-            this.objectPoolManager.Spawned      -= this.OnSpawned;
-            this.objectPoolManager.Recycled     -= this.OnRecycled;
-            this.objectPoolManager.CleanedUp    -= this.OnCleanedUp;
+            this.objectPoolManager.Spawned -= this.OnSpawned;
+            this.objectPoolManager.Recycled -= this.OnRecycled;
+            this.objectPoolManager.CleanedUp -= this.OnCleanedUp;
 
             this.logger.Debug("Disposed");
         }
@@ -208,8 +208,8 @@ namespace UniT.UI.Default
         private Action<IActivity, IReadOnlyList<IView>>? hidden;
         private Action<IActivity, IReadOnlyList<IView>>? disposed;
 
-        private int        lockCount;
-        private object?    nextParams;
+        private int lockCount;
+        private object? nextParams;
         private IActivity? nextActivity;
 
         private void OnInstantiated(GameObject instance)
@@ -221,8 +221,8 @@ namespace UniT.UI.Default
             foreach (var child in children.AsSpan())
             {
                 child.Container = this.container;
-                child.Manager   = this;
-                child.Activity  = root;
+                child.Manager = this;
+                child.Activity = root;
             }
             foreach (var child in children.AsSpan()) child.OnInitialize();
             if (view is not IActivity activity) return;
@@ -237,7 +237,7 @@ namespace UniT.UI.Default
             {
                 if (type is ActivityType.Screen)
                 {
-                    this.showingActivities.Where(activity => activity.Type is not ActivityType.Overlay)
+                    this.showingActivities.Where(static activity => activity.Type is not ActivityType.Overlay)
                         .SafeForEach(static (activity, objectPoolManager) => objectPoolManager.Recycle(activity.gameObject), this.objectPoolManager);
                 }
                 view.gameObject.transform.SetParent(this.activityRoots[type], false);
@@ -245,11 +245,11 @@ namespace UniT.UI.Default
             if (this.nextParams is not null)
             {
                 ((IViewWithParams)view).Params = this.nextParams;
-                this.nextParams                = null;
+                this.nextParams = null;
             }
             if (this.nextActivity is not null)
             {
-                view.Activity     = this.nextActivity;
+                view.Activity = this.nextActivity;
                 this.nextActivity = null;
             }
             foreach (var child in children.AsSpan()) child.OnShow();

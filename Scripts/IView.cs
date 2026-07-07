@@ -13,8 +13,10 @@ namespace UniT.UI
 
         public IActivity Activity { get; set; }
 
+#pragma warning disable IDE1006 // Naming Styles
         // ReSharper disable once InconsistentNaming
         public GameObject gameObject { get; }
+#pragma warning restore IDE1006 // Naming Styles
     }
 
     public interface IViewWithoutParams : IView
@@ -32,9 +34,9 @@ namespace UniT.UI
         {
             set => this.Params = value switch
             {
-                null            => default,
+                null => default,
                 TParams @params => @params,
-                _               => throw new InvalidOperationException($"{this.GetType().Name} expected params of type {typeof(TParams)}, got {value.GetType().Name}"),
+                _ => throw new InvalidOperationException($"{this.GetType().Name} expected params of type {typeof(TParams)}, got {value.GetType().Name}"),
             };
         }
 
