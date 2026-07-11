@@ -14,8 +14,11 @@ namespace UniT.UI
         public IActivity Activity { get; set; }
 
 #pragma warning disable IDE1006 // Naming Styles
-        // ReSharper disable once InconsistentNaming
+        // ReSharper disable InconsistentNaming
         public GameObject gameObject { get; }
+
+        public Transform transform { get; }
+        // ReSharper restore InconsistentNaming
 #pragma warning restore IDE1006 // Naming Styles
     }
 

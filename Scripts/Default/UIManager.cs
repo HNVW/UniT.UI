@@ -240,7 +240,7 @@ namespace UniT.UI.Default
                     this.showingActivities.Where(static activity => activity.Type is not ActivityType.Overlay)
                         .SafeForEach(static (activity, objectPoolManager) => objectPoolManager.Recycle(activity.gameObject), this.objectPoolManager);
                 }
-                view.gameObject.transform.SetParent(this.activityRoots[type], false);
+                view.transform.SetParent(this.activityRoots[type], false);
             }
             if (this.nextParams is not null)
             {
