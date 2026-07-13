@@ -1,6 +1,7 @@
 #nullable enable
 namespace UniT.UI.Default.DI
 {
+    using Extensions;
     using UnityEngine;
     using UnityEngine.EventSystems;
     using VContainer;

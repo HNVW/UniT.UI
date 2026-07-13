@@ -2,7 +2,7 @@
 namespace UniT.UI
 {
     using System;
-    using UniT.DI;
+    using DI;
     using UnityEngine;
 
     [RequireComponent(typeof(RectTransform))]

@@ -6,7 +6,7 @@ namespace UniT.UI
     using System.Runtime.CompilerServices;
     using System.Threading;
     using Cysharp.Threading.Tasks;
-    using UniT.Extensions;
+    using Extensions;
     using UnityEngine;
 
     public interface IUIManager

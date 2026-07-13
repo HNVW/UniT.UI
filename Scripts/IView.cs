@@ -2,7 +2,7 @@
 namespace UniT.UI
 {
     using System;
-    using UniT.DI;
+    using DI;
     using UnityEngine;
 
     public interface IView : IViewLifecycle
@@ -13,13 +13,9 @@ namespace UniT.UI
 
         public IActivity Activity { get; set; }
 
-#pragma warning disable IDE1006 // Naming Styles
-        // ReSharper disable InconsistentNaming
         public GameObject gameObject { get; }
 
         public Transform transform { get; }
-        // ReSharper restore InconsistentNaming
-#pragma warning restore IDE1006 // Naming Styles
     }
 
     public interface IViewWithoutParams : IView

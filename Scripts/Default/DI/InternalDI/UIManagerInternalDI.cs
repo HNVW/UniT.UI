@@ -1,7 +1,7 @@
 #nullable enable
 namespace UniT.UI.Default.DI
 {
-    using UniT.DI;
+    using InternalDI;
     using UnityEngine;
     using UnityEngine.EventSystems;
 
