@@ -1,5 +1,5 @@
 #nullable enable
-namespace UniT.UI.Default
+namespace UniT.UI
 {
     using System;
     using System.Collections.Generic;

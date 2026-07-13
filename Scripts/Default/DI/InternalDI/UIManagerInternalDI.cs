@@ -1,5 +1,5 @@
 #nullable enable
-namespace UniT.UI.Default.DI
+namespace UniT.UI.DI
 {
     using InternalDI;
     using UnityEngine;
