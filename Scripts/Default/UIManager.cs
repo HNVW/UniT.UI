@@ -218,13 +218,13 @@ namespace UniT.UI
             var children = view.gameObject.GetComponentsInChildren<IView>();
             this.objToViews.Add(instance, (view, children));
             var root = (view as IActivity)!;
-            foreach (var child in children.AsSpan())
+            foreach (var child in children)
             {
                 child.Container = this.container;
                 child.Manager = this;
                 child.Activity = root;
             }
-            foreach (var child in children.AsSpan()) child.OnInitialize();
+            foreach (var child in children) child.OnInitialize();
             if (view is not IActivity activity) return;
             this.initialized?.Invoke(activity, children);
         }
@@ -252,7 +252,7 @@ namespace UniT.UI
                 view.Activity = this.nextActivity;
                 this.nextActivity = null;
             }
-            foreach (var child in children.AsSpan()) child.OnShow();
+            foreach (var child in children) child.OnShow();
             if (view is not IActivity activity) return;
             this.showingActivities.Add(activity);
             this.shown?.Invoke(activity, children);
@@ -262,7 +262,7 @@ namespace UniT.UI
         {
             if (!this.objToViews.TryGetValue(instance, out var value)) return;
             var (view, children) = value;
-            foreach (var child in children.AsSpan()) child.OnHide();
+            foreach (var child in children) child.OnHide();
             if (view is IViewWithParams viewWithParams)
             {
                 viewWithParams.Params = null;
@@ -276,7 +276,7 @@ namespace UniT.UI
         {
             if (!this.objToViews.Remove(instance, out var value)) return;
             var (view, children) = value;
-            foreach (var child in children.AsSpan()) child.OnDispose();
+            foreach (var child in children) child.OnDispose();
             if (view is not IActivity activity) return;
             this.disposed?.Invoke(activity, children);
         }
